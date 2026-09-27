@@ -1,0 +1,73 @@
+{
+  "name": "inter-drizzle-no-mono-repo",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build --turbopack",
+    "start": "next start",
+    "lint": "biome check",
+    "format": "biome format --write"
+  },
+  "dependencies": {
+    "pdf-parse": "^1.1.1",
+    "@ai-sdk/google": "^2.0.18",
+    "@ai-sdk/groq": "2.0.55",
+    "@ai-sdk/react": "^2.0.64",
+    "@neondatabase/serverless": "^1.0.2",
+    "@radix-ui/react-accordion": "^1.2.12",
+    "@radix-ui/react-avatar": "^1.1.10",
+    "@radix-ui/react-dropdown-menu": "^2.1.16",
+    "@radix-ui/react-label": "^2.1.7",
+    "@radix-ui/react-select": "^2.2.6",
+    "@radix-ui/react-separator": "^1.1.7",
+    "@radix-ui/react-slot": "^1.2.3",
+    "@radix-ui/react-tabs": "^1.1.13",
+    "@t3-oss/env-nextjs": "^0.13.8",
+    "@tanstack/react-query": "^5.90.2",
+    "@trpc/client": "^11.6.0",
+    "@trpc/react-query": "^11.6.0",
+    "@trpc/server": "^11.6.0",
+    "@vercel/speed-insights": "^1.2.0",
+    "ai": "^5.0.64",
+    "better-auth": "^1.3.27",
+    "class-variance-authority": "^0.7.1",
+    "client-only": "^0.0.1",
+    "clsx": "^2.1.1",
+    "dotenv": "^17.2.3",
+    "drizzle-orm": "^0.44.6",
+    "lucide-react": "^0.545.0",
+    "motion": "^12.23.22",
+    "next": "16.0.0-beta.0",
+    "next-themes": "^0.4.6",
+    "nuqs": "^2.7.1",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "server-only": "^0.0.1",
+    "shiki": "^3.13.0",
+    "sonner": "^2.0.7",
+    "streamdown": "^1.3.0",
+    "tailwind-merge": "^3.3.1",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.2.5",
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "19.2.2",
+    "@types/react-dom": "19.2.1",
+    "drizzle-kit": "^0.31.5",
+    "husky": "^9.1.7",
+    "tailwindcss": "^4",
+    "tsx": "^4.20.6",
+    "tw-animate-css": "^1.4.0",
+    "typescript": "^5",
+    "ultracite": "5.6.1"
+  },
+  "pnpm": {
+    "overrides": {
+      "@types/react": "19.2.2",
+      "@types/react-dom": "19.2.1"
+    }
+  }
+}

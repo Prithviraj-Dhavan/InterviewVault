@@ -1,0 +1,3 @@
+- Use shadcn/ui components imported from `@/components/ui`.
+- Never use any to fix typescript errors.
+- Be extremely concise, unless not asked to elaborate. Sacrifice grammar for the sake of consision.
