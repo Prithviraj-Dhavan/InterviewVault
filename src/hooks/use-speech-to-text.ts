@@ -36,18 +36,18 @@ export function useSpeechToText(onFinalText: (text: string) => void) {
     };
 
     rec.onresult = (event: any) => {
-      let interimText = "";
-      let finalText = "";
+      let newInterimText = "";
+      let newFinalText = "";
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const chunk = event.results[i][0].transcript;
-        if (event.results[i].isFinal) finalText += chunk;
-        else interimText += chunk;
+        if (event.results[i].isFinal) newFinalText += chunk;
+        else newInterimText += chunk;
       }
       
-      console.log("Speech result:", { interimText, finalText });
+      console.log("Speech result:", { newInterimText, newFinalText });
       
-      if (finalText) onFinalRef.current(finalText.trim());
-      setInterim(interimText);
+      if (newFinalText) onFinalRef.current(newFinalText.trim());
+      setInterim(newInterimText);
     };
 
     rec.onerror = (e: any) => {
