@@ -26,14 +26,26 @@ const links: LinkItem[] = [
 
 const WHITESPACE = /\s+/;
 
-function initials(name?: string | null) {
-  if (!name) {
-    return "?";
+function initials(name?: string | null, email?: string | null) {
+  if (name) {
+    const parts = name.trim().split(WHITESPACE);
+    const first = parts[0]?.[0] ?? "";
+    const last = parts.length > 1 ? (parts.at(-1)?.[0] ?? "") : "";
+    return (first + last).toUpperCase();
   }
-  const parts = name.trim().split(WHITESPACE);
-  const first = parts[0]?.[0] ?? "";
-  const last = parts.length > 1 ? (parts.at(-1)?.[0] ?? "") : "";
-  return (first + last).toUpperCase() || "?";
+  if (email) {
+    return email.charAt(0).toUpperCase();
+  }
+  return "?";
+}
+
+function getAvatarColor(str: string) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const h = Math.abs(hash) % 360;
+  return `hsl(${h}, 70%, 40%)`;
 }
 
 function UserMenu() {
@@ -53,6 +65,9 @@ function UserMenu() {
   }
 
   const { name, email, image } = session.user;
+  const identifier = name || email || "?";
+  const bgColor = getAvatarColor(identifier);
+  const initialsText = initials(name, email);
 
   return (
     <DropdownMenu>
@@ -64,7 +79,11 @@ function UserMenu() {
         >
           <Avatar>
             <AvatarImage alt={name ?? "User"} src={image ?? undefined} />
-            <AvatarFallback>{initials(name)}</AvatarFallback>
+            <AvatarFallback 
+              style={{ backgroundColor: bgColor, color: 'white', fontWeight: 500 }}
+            >
+              {initialsText}
+            </AvatarFallback>
           </Avatar>
         </button>
       </DropdownMenuTrigger>
