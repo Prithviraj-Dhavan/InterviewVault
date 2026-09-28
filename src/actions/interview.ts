@@ -14,10 +14,9 @@ import { z } from "zod";
 import { db } from "@/db";
 import { interviewSessions, interviewTurns } from "@/db/schema/interview";
 import { auth } from "@/lib/auth";
+import { TOTAL_TURNS } from "@/lib/interview-constants";
 
 const MAX_SESSIONS_PER_DAY = 50;
-// Total questions in a session. Kept even so the mixture can be balanced.
-const TOTAL_TURNS = 6;
 const MIN_ANSWER_LENGTH = 15;
 const MODEL = "openai/gpt-oss-120b";
 
@@ -114,6 +113,82 @@ async function validateAnswer(
 }
 
 // ---------------------------------------------------------------------------
+// Candidate Profile & Interview Plan
+// ---------------------------------------------------------------------------
+
+const profileSchema = z.object({
+  level: z.string().describe("E.g., junior, mid, senior"),
+  skills: z.array(z.string()).describe("List of core skills found"),
+  gaps: z.array(z.string()).describe("Gaps between resume and job description"),
+});
+
+async function generateCandidateProfile(context: string) {
+  try {
+    const { object } = await generateObject({
+      model: groq(MODEL),
+      schema: profileSchema,
+      system:
+        "You are an expert technical recruiter analyzing a resume against a job description. Produce a candidate profile including their seniority level, strongest skills, and any gaps.",
+      prompt: context,
+    });
+    return object;
+  } catch (e) {
+    console.error("Failed to generate profile", e);
+    return { level: "unknown", skills: [], gaps: [] };
+  }
+}
+
+const planSchema = z.object({
+  topics: z.array(
+    z.object({
+      name: z.string(),
+      weight: z.number().min(0).max(1),
+    })
+  ),
+});
+
+async function generateInterviewPlan(context: string, profile: string) {
+  try {
+    const { object } = await generateObject({
+      model: groq(MODEL),
+      schema: planSchema,
+      system:
+        "You are an expert technical interviewer planning an interview. Based on the candidate profile and context, select the key topics to cover and assign a weight (0-1) to each.",
+      prompt: `${context}\n\nCandidate Profile:\n${profile}`,
+    });
+    return object;
+  } catch (e) {
+    console.error("Failed to generate plan", e);
+    return { topics: [] };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Evaluation
+// ---------------------------------------------------------------------------
+
+const evaluationSchema = z.object({
+  score: z.number().min(1).max(5).describe("Score from 1 to 5"),
+  feedback: z.string().describe("Short feedback on why they received this score."),
+});
+
+async function evaluateAnswer(question: string, answer: string, context: string) {
+  try {
+    const { object } = await generateObject({
+      model: groq(MODEL),
+      schema: evaluationSchema,
+      system:
+        "You are an expert interviewer evaluating a single answer on a scale of 1 to 5. 1 is terrible, 3 is mediocre/acceptable, 5 is excellent. Provide the score and a short 1-sentence feedback.",
+      prompt: `${context}\n\nQuestion: ${question}\nCandidate's Answer: ${answer}`,
+    });
+    return object;
+  } catch (e) {
+    console.error("Failed to evaluate answer", e);
+    return { score: 3, feedback: "Evaluation failed." };
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Question generation
 // ---------------------------------------------------------------------------
 
@@ -127,26 +202,22 @@ const questionSchema = z.object({
   category: z.enum(["technical", "behavioral"]),
 });
 
-function buildContext(session: {
+function buildQuestionContext(session: {
   company: string;
   role: string;
   resumeText: string;
   jobDescription: string;
+  candidateProfile: string | null;
+  interviewPlan: string | null;
 }) {
-  return `Company: ${session.company}
-Role: ${session.role}
-
-Job Description:
-${session.jobDescription}
-
-Candidate's Resume:
-${session.resumeText}`;
+  return `${buildContext(session)}\n\nCandidate Profile:\n${session.candidateProfile}\n\nInterview Plan:\n${session.interviewPlan}`;
 }
 
 async function generateQuestion(
   context: string,
   transcript: string,
-  counts: { technical: number; behavioral: number }
+  counts: { technical: number; behavioral: number },
+  isFollowUp: boolean = false
 ): Promise<{ question: string; reason: string; category: Category }> {
   const nextCategoryHint =
     counts.technical > counts.behavioral
@@ -156,12 +227,11 @@ async function generateQuestion(
         : "Counts are currently even — pick whichever fits best next.";
 
   const fallback: { question: string; reason: string; category: Category } = {
-    question:
+    question: isFollowUp ? "Can you elaborate on that?" :
       counts.technical <= counts.behavioral
         ? "Walk me through a technical decision you made in a recent project and why you made it."
         : "Tell me about a time you had to work through a disagreement with a teammate.",
-    reason:
-      "Fallback question used because the AI question generator was unavailable.",
+    reason: "Fallback question used because the AI question generator was unavailable.",
     category: counts.technical <= counts.behavioral ? "technical" : "behavioral",
   };
 
@@ -169,12 +239,11 @@ async function generateQuestion(
     const { object } = await generateObject({
       model: groq(MODEL),
       schema: questionSchema,
-      system: `You are an expert technical interviewer. Using the candidate's resume and the job description below, ask ONE specific interview question at a time.
+      system: `You are an expert technical interviewer. Using the candidate's profile, interview plan, resume and the job description below, ask ONE specific interview question at a time.
 
 Rules:
-- Base the question on concrete things in the resume (projects, skills, past roles) and on what the job description asks for.
-- Across the whole interview you must ask a genuine MIX of technical questions (about specific skills/projects/tools on the resume) and behavioral questions (about how they work, past situations, teamwork, decisions) — not all of one type.
-- ${nextCategoryHint}
+- ${isFollowUp ? "The candidate just answered a question but their answer missed the mark. Ask ONE follow-up question to dig deeper." : "Base the question on the interview plan topics and concrete things in the resume/JD."}
+- ${isFollowUp ? "Ensure it directly follows up on the last exchange in the transcript." : nextCategoryHint}
 - Never repeat a question already asked in the transcript.
 - Ask only ONE question, with no introductory text.`,
       prompt: `${context}\n\nInterview transcript so far:\n${transcript || "(no questions asked yet — this is the first question)"}`,
@@ -283,6 +352,16 @@ export async function startInterviewSession(formData: FormData) {
     );
   }
 
+  const baseContext = buildContext({
+    company,
+    role,
+    jobDescription,
+    resumeText,
+  });
+
+  const profile = await generateCandidateProfile(baseContext);
+  const plan = await generateInterviewPlan(baseContext, JSON.stringify(profile));
+
   const [session] = await db
     .insert(interviewSessions)
     .values({
@@ -291,11 +370,13 @@ export async function startInterviewSession(formData: FormData) {
       role,
       resumeText,
       jobDescription,
+      candidateProfile: JSON.stringify(profile),
+      interviewPlan: JSON.stringify(plan),
       status: "in_progress",
     })
     .returning();
 
-  const context = buildContext(session);
+  const context = buildQuestionContext(session);
   const first = await generateQuestion(context, "", {
     technical: 0,
     behavioral: 0,
@@ -361,9 +442,17 @@ export async function submitAnswer(
     return { error: validation.message };
   }
 
+  const context = buildContext(session);
+  const questionContext = buildQuestionContext(session);
+  const evaluation = await evaluateAnswer(currentTurn.questionText, answer, context);
+
   await db
     .update(interviewTurns)
-    .set({ answerText: answer })
+    .set({ 
+      answerText: answer, 
+      score: evaluation.score, 
+      evaluationFeedback: evaluation.feedback 
+    })
     .where(
       and(
         eq(interviewTurns.sessionId, sessionId),
@@ -372,32 +461,57 @@ export async function submitAnswer(
     );
 
   const updatedTurns = turns
-    .map((t) => (t.orderNumber === orderNumber ? { ...t, answerText: answer } : t))
+    .map((t) => (t.orderNumber === orderNumber ? { ...t, answerText: answer, score: evaluation.score } : t))
     .sort((a, b) => a.orderNumber - b.orderNumber);
 
-  const context = buildContext(session);
   let transcript = "";
   for (const t of updatedTurns) {
     transcript += `\n[${t.category}] Interviewer: ${t.questionText}\n(Why asked: ${t.reason})\n`;
     if (t.answerText) {
-      transcript += `Candidate: ${t.answerText}\n`;
+      transcript += `Candidate: ${t.answerText}\n(AI Evaluation Score: ${t.score}/5)\n`;
     }
   }
 
-  if (orderNumber < TOTAL_TURNS) {
+  let consecutiveFollowUps = 0;
+  for (let i = updatedTurns.length - 1; i >= 0; i--) {
+    if (updatedTurns[i].isFollowUp) consecutiveFollowUps++;
+    else break;
+  }
+
+  const mainQuestionCount = updatedTurns.filter((t) => !t.isFollowUp).length;
+  const needsFollowUp = evaluation.score < 4 && consecutiveFollowUps < 2;
+
+  if (needsFollowUp) {
     const counts = updatedTurns.reduce(
       (acc, t) => {
-        if (t.category === "technical") {
-          acc.technical += 1;
-        } else {
-          acc.behavioral += 1;
-        }
+        if (t.category === "technical") acc.technical += 1;
+        else acc.behavioral += 1;
         return acc;
       },
       { technical: 0, behavioral: 0 }
     );
 
-    const next = await generateQuestion(context, transcript, counts);
+    const next = await generateQuestion(questionContext, transcript, counts, true);
+
+    await db.insert(interviewTurns).values({
+      sessionId,
+      questionText: next.question,
+      reason: next.reason,
+      category: currentTurn.category, // follow-up keeps same category
+      orderNumber: orderNumber + 1,
+      isFollowUp: true,
+    });
+  } else if (mainQuestionCount < TOTAL_TURNS) {
+    const counts = updatedTurns.reduce(
+      (acc, t) => {
+        if (t.category === "technical") acc.technical += 1;
+        else acc.behavioral += 1;
+        return acc;
+      },
+      { technical: 0, behavioral: 0 }
+    );
+
+    const next = await generateQuestion(questionContext, transcript, counts, false);
 
     await db.insert(interviewTurns).values({
       sessionId,
@@ -405,6 +519,7 @@ export async function submitAnswer(
       reason: next.reason,
       category: next.category,
       orderNumber: orderNumber + 1,
+      isFollowUp: false,
     });
   } else {
     const { score, feedback } = await generateScorecard(context, transcript);
