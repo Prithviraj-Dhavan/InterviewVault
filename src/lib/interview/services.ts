@@ -26,7 +26,7 @@ import {
   buildReportPrompt,
 } from "./prompts";
 
-export const MODEL = "openai/gpt-oss-20b"; // Groq model
+import { INTERVIEW_MODEL } from "../interview-constants";
 
 export async function createSession(userId: string, company: string, role: string, resumeText: string, jdText: string) {
   const [session] = await db
@@ -46,7 +46,7 @@ export async function generateProfile(sessionId: string) {
   let object;
   try {
     const res = await generateObject({
-      model: groq(MODEL),
+      model: groq(INTERVIEW_MODEL),
       schema: candidateProfileSchema,
       prompt: buildProfilePrompt(session.resumeText, session.jdText),
       temperature: 0.2,
@@ -83,7 +83,7 @@ export async function generatePlan(sessionId: string) {
   let object;
   try {
     const res = await generateObject({
-      model: groq(MODEL),
+      model: groq(INTERVIEW_MODEL),
       schema: interviewPlanSchema,
       prompt: buildPlanPrompt(profile.rawLlmJson, session.jdText, session.resumeText, session.company, session.role),
       temperature: 0.2,
@@ -197,7 +197,7 @@ export async function generateNextQuestion(sessionId: string) {
   }
 
   const { object } = await generateObject({
-    model: groq(MODEL),
+    model: groq(INTERVIEW_MODEL),
     schema: interviewQuestionSchema,
     prompt: buildQuestionPrompt(plan.topics, profile.rawLlmJson, session.jdText, session.resumeText, transcriptStr, isFollowUp, session.company, session.role),
     temperature: 0.6,
@@ -236,7 +236,7 @@ export async function evaluateAnswer(answerId: string) {
   const session = await db.query.interviewSessions.findFirst({ where: eq(interviewSessions.id, question.sessionId) });
   
   const { object } = await generateObject({
-    model: groq(MODEL),
+    model: groq(INTERVIEW_MODEL),
     schema: interviewEvaluationSchema,
     prompt: buildEvaluationPrompt(question.prompt, answer.content, session!.jdText),
     temperature: 0.2,
