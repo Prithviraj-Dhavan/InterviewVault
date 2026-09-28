@@ -43,7 +43,7 @@ export default function PracticeSetupPage() {
           Upload your resume and paste the job description below to begin.
         </p>
         {error && <div className="text-red-500 mb-4 text-sm font-medium">{error}</div>}
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
           <div>
             <Label htmlFor="company">Company</Label>
             <Input
