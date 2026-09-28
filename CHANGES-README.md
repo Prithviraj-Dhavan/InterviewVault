@@ -1,49 +1,67 @@
-# Switch AI Interview Practice from Gemini to Groq
+# Practice section, redesigned around the pipeline look
 
-## Why
+This is the complete, self-contained set of files — includes the explainer
+from before plus the new live status bar, so you only need this one zip.
 
-The practice feature was originally built on Google Gemini (a separate,
-new feature — it never touched your existing Groq-based `completion`/
-`evaluate` routes). But Gemini's free tier rate-limits aggressively, and
-when the AI answer-validation call got rate-limited, the code was designed
-to "fail open" (let the answer through) rather than block the user
-entirely — which is why gibberish like `adwegergeev` slipped past and got
-scored 5/10 with a "rate limited" message.
+## What's here
 
-Switching this feature to Groq (the same provider and model your other AI
-routes already use successfully: `openai/gpt-oss-120b`) fixes this at the
-source, and needs no new API key or dependency — `@ai-sdk/groq` is already
-in your `package.json` and `GROQ_API_KEY` is already in your `.env`.
+- **Setup page** (`/practice`): the animated "how it works" explainer
+  (auto-cycling demo) sits above your existing form — unchanged from
+  before.
+- **Live session page** (`/practice/[sessionId]`): now has a real,
+  non-demo version of the same diagram at the top — `PipelineStatusBar`.
+  It reflects your *actual* progress:
+  - Shows "Question N of 6" for real, using the real question count
+  - Highlights the "Question" node while you're mid-interview
+  - Highlights "Report" once the session is completed, with the other
+    nodes shown as done
+  - The bottom JSON preview shows the **real** category and reason for
+    your current question (not placeholder text), or your real score and
+    readiness rating once finished
 
-## What changed
+## Files in this zip
 
-Only `src/actions/interview.ts`:
-- `import { google } from "@ai-sdk/google"` → `import { groq } from "@ai-sdk/groq"`
-- Model changed from `"gemini-1.5-flash"` → `"openai/gpt-oss-120b"`
-- All three AI calls (`validateAnswer`, `generateQuestion`, `generateScorecard`)
-  now call `groq(MODEL)` instead of `google(MODEL)`
-- The scorecard's fallback message no longer blames "Google Gemini free
-  tier" (it's generic now, since it shouldn't come up nearly as often)
+```
+src/lib/interview-constants.ts                        (new)
+src/actions/interview.ts                               (updated — imports the
+                                                          shared constant instead
+                                                          of defining it locally)
+src/components/custom/practice/pipeline-explainer.tsx  (unchanged from before)
+src/components/custom/practice/pipeline-status-bar.tsx (new — the live version)
+src/app/(main)/practice/page.tsx                        (unchanged from before)
+src/app/(main)/practice/[sessionId]/page.tsx            (updated — renders the
+                                                          new status bar)
+```
 
-Nothing else changed — your resume upload, JD parsing, question mixing,
-the two-step gibberish check, and the scorecard UI all work exactly as
-before, just backed by Groq now.
+## An important technical note (worth knowing, not just trivia)
+
+`src/actions/interview.ts` starts with `"use server"` at the top of the
+file. Next.js requires that **every** export from a file like that be an
+async function — you can't export a plain constant from it. I'd
+originally tried to export the "6 questions total" number directly from
+that file so the UI could stay in sync with it, and that would have
+broken your build. Instead, I moved that number into a new, tiny file —
+`src/lib/interview-constants.ts` — that both the server action and the UI
+import from. This keeps the "6" in exactly one place without violating
+that rule.
 
 ## Steps to apply
 
-1. Open `src/actions/interview.ts` in your project and replace it entirely
-   with the version in this zip.
-2. No new dependency, no new env variable, no database migration needed.
-3. Restart your dev server: stop it (Ctrl+C), run `pnpm dev` again.
-4. Test: start a new practice session, answer a question with something
-   like `chwgwwhfhww` — it should still be rejected instantly (that catch
-   is a built-in check, unrelated to which AI provider is used). Then try
-   a real, on-topic-but-vague answer to confirm it still gets accepted and
-   moves you forward.
+1. Copy every file from this zip into your project at the matching paths,
+   overwriting what's there (the two `page.tsx` files, `interview.ts`) and
+   creating the new ones (`interview-constants.ts`, `pipeline-status-bar.tsx`).
+2. No new dependencies, no database changes.
+3. Restart: `pnpm dev`.
+4. Go to `/practice`, start a new interview, and you should see the live
+   status bar above each question, updating as you go, ending on the
+   "Report" node once you finish.
 
-## One more thing
+## Still open, if you want it
 
-Old sessions you already ran (with the "API Overloaded" scorecard) already
-have their feedback saved in the database — this fix only affects new
-sessions going forward. If you want to re-score an old session, you'd need
-to start a fresh one.
+As mentioned before: the reference screenshot's actual *interview logic*
+(a distinct "Profile" extraction step, a weighted "Plan," immediate 1–5
+scoring per answer, and up to 2 conditional follow-ups when a score is
+low) is not implemented — this delivery is the pipeline's *look*, wired to
+your *real* progress, but the underlying question flow is still the one
+we built earlier (fixed set of grounded/mixed questions, validated, then
+one final scorecard). Say the word if you want that deeper rework too.
