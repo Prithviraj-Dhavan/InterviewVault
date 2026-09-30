@@ -1,13 +1,18 @@
 <div align="center">
   <img src="./assets/app.png" alt="Interview Vault App Preview" width="100%" />
+</div>
 
-  # Interview Vault 
-  **The ultimate platform for collaborative interview prep and AI-powered mock interviews.**
+---
 
-  [![Next.js](https://img.shields.io/badge/Next.js-15-black?style=flat&logo=next.js)](https://nextjs.org/)
-  [![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue?style=flat&logo=typescript)](https://www.typescriptlang.org/)
-  [![Tailwind CSS](https://img.shields.io/badge/Tailwind-CSS-38B2AC?style=flat&logo=tailwind-css)](https://tailwindcss.com/)
-  [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Drizzle-336791?style=flat&logo=postgresql)](https://postgresql.org/)
+<div align="center">
+  <h1>Interview Vault</h1>
+  <strong>The ultimate platform for collaborative interview prep and AI-powered mock interviews.</strong>
+  <br/>
+  <br/>
+  <a href="https://nextjs.org/"><img src="https://img.shields.io/badge/Next.js-15-black?style=flat&logo=next.js" alt="Next.js" /></a>
+  <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-Ready-blue?style=flat&logo=typescript" alt="TypeScript" /></a>
+  <a href="https://tailwindcss.com/"><img src="https://img.shields.io/badge/Tailwind-CSS-38B2AC?style=flat&logo=tailwind-css" alt="Tailwind CSS" /></a>
+  <a href="https://postgresql.org/"><img src="https://img.shields.io/badge/PostgreSQL-Drizzle-336791?style=flat&logo=postgresql" alt="PostgreSQL" /></a>
 </div>
 
 <br/>
