@@ -77,3 +77,19 @@ export const interviewReports = pgTable("interview_reports", {
   summary: text("summary").notNull(),
   generatedAt: timestamp("generated_at").defaultNow().notNull(),
 });
+
+export const interviewTurns = pgTable("interview_turns", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  sessionId: uuid("session_id")
+    .notNull()
+    .references(() => interviewSessions.id, { onDelete: "cascade" }),
+  questionText: text("question_text").notNull(),
+  reason: text("reason").notNull(),
+  category: text("category").notNull(), // "technical" | "behavioral"
+  orderNumber: integer("order_number").notNull(),
+  isFollowUp: boolean("is_follow_up").notNull().default(false),
+  answerText: text("answer_text"),
+  score: integer("score"),                     // 1-5
+  evaluationFeedback: jsonb("evaluation_feedback"), // { strengths: string[], gaps: string[] }
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
