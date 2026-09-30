@@ -12,7 +12,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { db } from "@/db";
-import { interviewSessions, interviewTurns } from "@/db/schema/interview";
+import { interviewSessions, interviewTurns, candidateProfiles, interviewPlans, interviewReports } from "@/db/schema/interview";
 import { auth } from "@/lib/auth";
 import { TOTAL_TURNS } from "@/lib/interview-constants";
 
@@ -192,6 +192,15 @@ async function evaluateAnswer(question: string, answer: string, context: string)
 // Question generation
 // ---------------------------------------------------------------------------
 
+function buildContext(session: {
+  company: string;
+  role: string;
+  resumeText: string;
+  jdText: string;
+}) {
+  return `Company: ${session.company}\nRole: ${session.role}\nJob Description:\n${session.jdText}\nResume:\n${session.resumeText}`;
+}
+
 const questionSchema = z.object({
   question: z.string().describe("The single interview question to ask."),
   reason: z
@@ -206,7 +215,7 @@ function buildQuestionContext(session: {
   company: string;
   role: string;
   resumeText: string;
-  jobDescription: string;
+  jdText: string;
   candidateProfile: string | null;
   interviewPlan: string | null;
 }) {
@@ -355,7 +364,7 @@ export async function startInterviewSession(formData: FormData) {
   const baseContext = buildContext({
     company,
     role,
-    jobDescription,
+    jdText: jobDescription,
     resumeText,
   });
 
@@ -369,14 +378,30 @@ export async function startInterviewSession(formData: FormData) {
       company,
       role,
       resumeText,
-      jobDescription,
-      candidateProfile: JSON.stringify(profile),
-      interviewPlan: JSON.stringify(plan),
-      status: "in_progress",
+      jdText: jobDescription,
+      status: "INTERVIEW_LOOP",
     })
     .returning();
 
-  const context = buildQuestionContext(session);
+  await db.insert(candidateProfiles).values({
+    sessionId: session.id,
+    level: profile.level,
+    skills: profile.skills,
+    gaps: profile.gaps,
+    rawLlmJson: profile,
+  });
+
+  await db.insert(interviewPlans).values({
+    sessionId: session.id,
+    topics: plan.topics,
+  });
+
+  const context = buildQuestionContext({
+    ...session,
+    candidateProfile: JSON.stringify(profile),
+    interviewPlan: JSON.stringify(plan),
+  });
+
   const first = await generateQuestion(context, "", {
     technical: 0,
     behavioral: 0,
@@ -443,7 +468,16 @@ export async function submitAnswer(
   }
 
   const context = buildContext(session);
-  const questionContext = buildQuestionContext(session);
+
+  const profile = await db.select().from(candidateProfiles).where(eq(candidateProfiles.sessionId, sessionId)).limit(1).then((res) => res[0]);
+  const plan = await db.select().from(interviewPlans).where(eq(interviewPlans.sessionId, sessionId)).limit(1).then((res) => res[0]);
+
+  const questionContext = buildQuestionContext({
+    ...session,
+    candidateProfile: profile ? JSON.stringify(profile.rawLlmJson) : null,
+    interviewPlan: plan ? JSON.stringify(plan.topics) : null,
+  });
+
   const evaluation = await evaluateAnswer(currentTurn.questionText, answer, context);
 
   await db
@@ -478,10 +512,23 @@ export async function submitAnswer(
     else break;
   }
 
+  const totalQuestionCount = updatedTurns.length;
   const mainQuestionCount = updatedTurns.filter((t) => !t.isFollowUp).length;
-  const needsFollowUp = evaluation.score < 4 && consecutiveFollowUps < 2;
+  const needsFollowUp = evaluation.score < 4 && consecutiveFollowUps < 1;
 
-  if (needsFollowUp) {
+  if (totalQuestionCount >= 7) {
+    const { score, feedback } = await generateScorecard(context, transcript);
+    await db.insert(interviewReports).values({
+      sessionId,
+      overallScore: score,
+      topicBreakdown: [],
+      summary: feedback,
+    });
+    await db
+      .update(interviewSessions)
+      .set({ status: "REPORT" })
+      .where(eq(interviewSessions.id, sessionId));
+  } else if (needsFollowUp) {
     const counts = updatedTurns.reduce(
       (acc, t) => {
         if (t.category === "technical") acc.technical += 1;
@@ -501,7 +548,7 @@ export async function submitAnswer(
       orderNumber: orderNumber + 1,
       isFollowUp: true,
     });
-  } else if (mainQuestionCount < TOTAL_TURNS) {
+  } else if (mainQuestionCount < 5) {
     const counts = updatedTurns.reduce(
       (acc, t) => {
         if (t.category === "technical") acc.technical += 1;
@@ -523,9 +570,15 @@ export async function submitAnswer(
     });
   } else {
     const { score, feedback } = await generateScorecard(context, transcript);
+    await db.insert(interviewReports).values({
+      sessionId,
+      overallScore: score,
+      topicBreakdown: [],
+      summary: feedback,
+    });
     await db
       .update(interviewSessions)
-      .set({ status: "completed", score, feedback })
+      .set({ status: "REPORT" })
       .where(eq(interviewSessions.id, sessionId));
   }
 
