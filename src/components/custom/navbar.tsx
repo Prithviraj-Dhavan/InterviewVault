@@ -19,7 +19,7 @@ import { ModeToggle } from "./theme-toggle";
 type LinkItem = { name: string; href: string };
 
 const links: LinkItem[] = [
-  { name: "Home", href: "/" },
+  { name: "Dashboard", href: "/dashboard" },
   { name: "Questions", href: "/questions" },
   { name: "Practice", href: "/practice" },
 ];
@@ -78,7 +78,6 @@ function UserMenu() {
           type="button"
         >
           <Avatar>
-            <AvatarImage alt={name ?? "User"} src={image ?? undefined} />
             <AvatarFallback 
               style={{ backgroundColor: bgColor, color: 'white', fontWeight: 500 }}
             >
@@ -102,7 +101,7 @@ function UserMenu() {
             router.refresh();
           }}
         >
-          <LogOut className="size-4" />
+          <LogOut className="size-4 mr-2" />
           Sign out
         </DropdownMenuItem>
       </DropdownMenuContent>

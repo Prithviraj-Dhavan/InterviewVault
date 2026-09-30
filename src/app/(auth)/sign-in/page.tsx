@@ -36,7 +36,7 @@ export default function SignIn() {
                 await signIn.social(
                   {
                     provider: "google",
-                    callbackURL: "/questions",
+                    callbackURL: "/dashboard",
                   },
                   {
                     onRequest: (ctx) => {
@@ -82,7 +82,7 @@ export default function SignIn() {
                 await signIn.social(
                   {
                     provider: "github",
-                    callbackURL: "/questions",
+                    callbackURL: "/dashboard",
                   },
                   {
                     onRequest: (ctx) => {
