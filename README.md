@@ -1,10 +1,4 @@
 <div align="center">
-  <img src="./assets/app.png" alt="Interview Vault App Preview" width="100%" />
-</div>
-
----
-
-<div align="center">
   <h1>Interview Vault</h1>
   <strong>The ultimate platform for collaborative interview prep and AI-powered mock interviews.</strong>
   <br/>
@@ -18,6 +12,12 @@
 <br/>
 
 InterviewVault is a comprehensive, modern platform built to help developers master technical interviews. Not only can you store, share, and organize community interview questions, but you can also run **highly realistic, dynamic AI Mock Interviews** tailored directly to your resume and target job descriptions.
+
+<div align="center">
+  <img src="./assets/app.png" alt="Interview Vault App Preview" width="100%" />
+</div>
+
+---
 
 ## Key Features
 
