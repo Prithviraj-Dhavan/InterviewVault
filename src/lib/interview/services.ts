@@ -118,17 +118,23 @@ export async function generateNextQuestion(sessionId: string) {
     orderBy: (qs, { asc }) => [asc(qs.orderIndex)],
   });
 
-  const answers = questions.length > 0 
+  const answers = questions.length > 0
     ? await db.query.interviewAnswers.findMany({
-        where: inArray(interviewAnswers.questionId, questions.map((q) => q.id)),
-      })
+      where: inArray(interviewAnswers.questionId, questions.map((q) => q.id)),
+    })
     : [];
 
   const evaluations = answers.length > 0
     ? await db.query.interviewEvaluations.findMany({
-        where: inArray(interviewEvaluations.answerId, answers.map((a) => a.id)),
-      })
+      where: inArray(interviewEvaluations.answerId, answers.map((a) => a.id)),
+    })
     : [];
+
+  // Calculate average score to determine strong/weak user
+  let avgScore = 0;
+  if (evaluations.length > 0) {
+    avgScore = evaluations.reduce((acc, ev) => acc + ev.score, 0) / evaluations.length;
+  }
 
   // Calculate if follow-up is needed
   let isFollowUp = false;
@@ -139,22 +145,29 @@ export async function generateNextQuestion(sessionId: string) {
     const lastQuestion = questions[questions.length - 1];
     const lastAnswer = answers.find((a) => a.questionId === lastQuestion.id);
     if (!lastAnswer) {
-       // Last question isn't answered yet! Just return it.
-       return lastQuestion;
+      // Last question isn't answered yet! Just return it.
+      return lastQuestion;
     }
-    
-    // HARD LIMIT: Maximum 10 questions total (including follow-ups)
-    if (questions.length >= 10) {
-       await db.update(interviewSessions).set({ status: "REPORT" }).where(eq(interviewSessions.id, sessionId));
-       return null;
+
+    // HARD LIMIT: Maximum 7 questions total (including follow-ups)
+    if (questions.length >= 7) {
+      await db.update(interviewSessions).set({ status: "REPORT" }).where(eq(interviewSessions.id, sessionId));
+      return null;
+    }
+
+    // Strong user limit: If they have answered at least 5 questions and their average score is >= 4, end early
+    if (questions.length >= 5 && avgScore >= 4) {
+      await db.update(interviewSessions).set({ status: "REPORT" }).where(eq(interviewSessions.id, sessionId));
+      return null;
     }
 
     const lastEval = evaluations.find((e) => e.answerId === lastAnswer.id);
-    if (lastEval && lastEval.triggeredFollowup) {
+    if (lastEval && lastEval.score < 4) {
       // Count previous followups for this parent
       const parentId = lastQuestion.parentQuestionId || lastQuestion.id;
       const followUps = questions.filter((q) => q.parentQuestionId === parentId);
-      if (followUps.length < 2) {
+      // ONLY allow 1 follow-up total for a question
+      if (followUps.length < 1) {
         isFollowUp = true;
         parentQuestionId = parentId;
         currentTopic = lastQuestion.topic;
@@ -168,18 +181,19 @@ export async function generateNextQuestion(sessionId: string) {
     const topicsArr = plan.topics as any[];
     let pickedTopic = topicsArr[0].topic;
     for (const t of topicsArr) {
-       const qCount = questions.filter(q => q.topic === t.topic && !q.parentQuestionId).length;
-       if (qCount < t.question_count) {
-          pickedTopic = t.topic;
-          break;
-       }
+      const qCount = questions.filter(q => q.topic === t.topic && !q.parentQuestionId).length;
+      if (qCount < t.question_count) {
+        pickedTopic = t.topic;
+        break;
+      }
     }
-    // If all topics reached question count, return null (meaning interview is over)
+    
+    // If we've asked all planned main questions, end the interview
     const totalTarget = topicsArr.reduce((acc, t) => acc + t.question_count, 0);
     const mainQuestions = questions.filter(q => !q.parentQuestionId).length;
     if (mainQuestions >= totalTarget) {
-       await db.update(interviewSessions).set({ status: "REPORT" }).where(eq(interviewSessions.id, sessionId));
-       return null; 
+      await db.update(interviewSessions).set({ status: "REPORT" }).where(eq(interviewSessions.id, sessionId));
+      return null;
     }
     currentTopic = pickedTopic;
   }
@@ -229,12 +243,12 @@ export async function submitAnswer(questionId: string, content: string, inputMod
 export async function evaluateAnswer(answerId: string) {
   const answer = await db.query.interviewAnswers.findFirst({ where: eq(interviewAnswers.id, answerId) });
   if (!answer) throw new Error("Answer not found");
-  
+
   const question = await db.query.interviewQuestions.findFirst({ where: eq(interviewQuestions.id, answer.questionId) });
   if (!question) throw new Error("Question not found");
-  
+
   const session = await db.query.interviewSessions.findFirst({ where: eq(interviewSessions.id, question.sessionId) });
-  
+
   const { object } = await generateObject({
     model: groq(INTERVIEW_MODEL),
     schema: interviewEvaluationSchema,
@@ -248,16 +262,16 @@ export async function evaluateAnswer(answerId: string) {
     feedback: object.feedback,
     triggeredFollowup: object.triggeredFollowup,
   }).returning();
-  
+
   return evaluation;
 }
 
 export async function generateReport(sessionId: string) {
   const session = await db.query.interviewSessions.findFirst({ where: eq(interviewSessions.id, sessionId) });
   const profile = await db.query.candidateProfiles.findFirst({ where: eq(candidateProfiles.sessionId, sessionId) });
-  
+
   const questions = await db.query.interviewQuestions.findMany({ where: eq(interviewQuestions.sessionId, sessionId) });
-  const answers = questions.length > 0 
+  const answers = questions.length > 0
     ? await db.query.interviewAnswers.findMany({ where: inArray(interviewAnswers.questionId, questions.map(q => q.id)) })
     : [];
   const evaluations = answers.length > 0
@@ -267,7 +281,7 @@ export async function generateReport(sessionId: string) {
   // Calculate scores
   let totalScore = 0;
   const topicBreakdown: Record<string, { total: number, count: number }> = {};
-  
+
   let transcriptStr = "";
   for (const q of questions) {
     transcriptStr += `\nInterviewer [${q.topic}]: ${q.prompt}`;
@@ -276,23 +290,24 @@ export async function generateReport(sessionId: string) {
       transcriptStr += `\nCandidate: ${ans.content}`;
       const ev = evaluations.find(e => e.answerId === ans.id);
       if (ev) {
-         transcriptStr += `\nEval: Score ${ev.score}, Strengths: ${ev.feedback.strengths.join(", ")}`;
-         totalScore += ev.score;
-         if (!topicBreakdown[q.topic]) topicBreakdown[q.topic] = { total: 0, count: 0 };
-         topicBreakdown[q.topic].total += ev.score;
-         topicBreakdown[q.topic].count += 1;
+        const feedbackObj = ev.feedback as { strengths: string[], gaps: string[] };
+        transcriptStr += `\nEval: Score ${ev.score}, Strengths: ${feedbackObj.strengths.join(", ")}`;
+        totalScore += ev.score;
+        if (!topicBreakdown[q.topic]) topicBreakdown[q.topic] = { total: 0, count: 0 };
+        topicBreakdown[q.topic].total += ev.score;
+        topicBreakdown[q.topic].count += 1;
       }
     }
   }
 
   const overallScore = evaluations.length > 0 ? Math.round((totalScore / evaluations.length) * 20) : 0; // out of 100
   const finalTopicBreakdown = Object.entries(topicBreakdown).map(([topic, stats]) => ({
-     topic,
-     score: Math.round((stats.total / stats.count) * 20)
+    topic,
+    score: Math.round((stats.total / stats.count) * 20)
   }));
 
   const { object } = await generateObject({
-    model: groq(MODEL),
+    model: groq(INTERVIEW_MODEL),
     schema: interviewReportSchema,
     prompt: buildReportPrompt(profile?.rawLlmJson, transcriptStr, session!.jdText),
     temperature: 0.3,
