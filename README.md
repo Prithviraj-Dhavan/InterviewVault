@@ -14,26 +14,26 @@
 
 InterviewVault is a comprehensive, modern platform built to help developers master technical interviews. Not only can you store, share, and organize community interview questions, but you can also run **highly realistic, dynamic AI Mock Interviews** tailored directly to your resume and target job descriptions.
 
-## 🚀 Key Features
+## Key Features
 
-### 🧠 AI Mock Interview Engine (New!)
+### AI Mock Interview Engine (New!)
 * **Smart Resume Parsing**: Upload your resume and Job Description, and our AI will dynamically identify core skills, projects, and gaps to build a completely personalized 5-question interview plan.
 * **Dynamic Follow-ups**: Answers are graded in real-time (1-5 scale). If you stumble on a concept, the AI instantly pivots to ask a highly-targeted follow-up question to probe your understanding (capped at exactly 7 questions to respect your time).
 * **Instant Scorecards**: When the interview finishes, the system utilizes Groq LPUs for lightning-fast inference to generate an immediate, comprehensive scorecard featuring a 0-100% final score, a topic-by-topic breakdown, and an actionable narrative summary.
 
-### 📚 Community Question Vault
+### Community Question Vault
 * **Question Management**: Create, edit, and organize real interview questions.
 * **Filter & Search**: Quickly sort questions by specific companies (e.g., Google, Amazon) or job roles.
 * **AI-Powered Solutions**: Generate intelligent reference answers for difficult technical questions.
 * **Collaborative Answers**: Community members can submit and upvote the best solutions.
 
-## 🏗️ Architecture
+## Architecture
 
 <div align="center">
   <img src="./assets/architecture.png" alt="Architecture Diagram" width="80%" />
 </div>
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 * **Framework**: Next.js 15 (App Router)
 * **Language**: TypeScript
@@ -42,7 +42,7 @@ InterviewVault is a comprehensive, modern platform built to help developers mast
 * **AI Integration**: AI SDK paired with Groq LPUs (`@ai-sdk/groq`) for instant, ultra-fast inference
 * **UI/Styling**: Tailwind CSS, shadcn/ui, framer-motion
 
-## 💻 Getting Started
+## Getting Started
 
 ### Prerequisites
 * Node.js 18+
@@ -80,7 +80,7 @@ pnpm dev
 ```
 Open [http://localhost:3000](http://localhost:3000) to view the application!
 
-## 🗄️ Database Schema Overview
+## Database Schema Overview
 The application is structured via a robust relational PostgreSQL schema:
 * **Users & Auth**: Secure sessions managed by Better Auth.
 * **Questions & Answers**: Core community question tracking and crowdsourced answers.
@@ -89,7 +89,7 @@ The application is structured via a robust relational PostgreSQL schema:
 * **Interview Questions & Evaluations**: Records the live transcript and real-time grading of the mock interview.
 * **Interview Reports**: Stores the final 0-100% calculated scores and summaries.
 
-## 🤝 Contributing
+## Contributing
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feature/amazing-feature`)
 3. Commit your changes (`git commit -m 'feat: add amazing feature'`)
