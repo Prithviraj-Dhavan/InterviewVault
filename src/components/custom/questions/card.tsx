@@ -51,7 +51,17 @@ export function QuestionCard({ question, votes }: QuestionCardProps) {
               alt="posted-by-image"
               src={question.postedByImage || "/placeholder.png"}
             />
-            <AvatarFallback>HP</AvatarFallback>
+            <AvatarFallback>
+              {question.postedBy
+                ? question.postedBy
+                    .split(" ")
+                    .filter(Boolean)
+                    .map((n) => n[0])
+                    .join("")
+                    .toUpperCase()
+                    .substring(0, 2)
+                : "?"}
+            </AvatarFallback>
           </Avatar>
           <p className="text-muted-foreground text-sm">{question.postedBy}</p>
         </div>
