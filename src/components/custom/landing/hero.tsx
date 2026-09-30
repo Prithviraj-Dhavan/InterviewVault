@@ -110,7 +110,7 @@ export function Hero() {
                   <div className="h-3 w-3 rounded-full bg-green-500" />
                 </div>
                 <div className="mx-auto flex items-center rounded-md bg-background/50 px-3 py-1 text-muted-foreground text-xs">
-                  https://interview-vault.vercel.app
+                  https://interview-vault-ai.vercel.app/
                 </div>
               </div>
               <div className="relative">

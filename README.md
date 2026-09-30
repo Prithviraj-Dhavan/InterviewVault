@@ -3,6 +3,7 @@
   <strong>The ultimate platform for collaborative interview prep and AI-powered mock interviews.</strong>
   <br/>
   <br/>
+  <a href="https://interview-vault-ai.vercel.app/"><img src="https://img.shields.io/badge/Live_Demo-interview--vault--ai.vercel.app-success?style=flat&logo=vercel" alt="Live Demo" /></a>
   <a href="https://nextjs.org/"><img src="https://img.shields.io/badge/Next.js-15-black?style=flat&logo=next.js" alt="Next.js" /></a>
   <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-Ready-blue?style=flat&logo=typescript" alt="TypeScript" /></a>
   <a href="https://tailwindcss.com/"><img src="https://img.shields.io/badge/Tailwind-CSS-38B2AC?style=flat&logo=tailwind-css" alt="Tailwind CSS" /></a>
@@ -12,6 +13,8 @@
 <br/>
 
 InterviewVault is a comprehensive, modern platform built to help developers master technical interviews. Not only can you store, share, and organize community interview questions, but you can also run **highly realistic, dynamic AI Mock Interviews** tailored directly to your resume and target job descriptions.
+
+👉 **Live Demo:** [https://interview-vault-ai.vercel.app/](https://interview-vault-ai.vercel.app/)
 
 <div align="center">
   <img src="./assets/app.png" alt="Interview Vault App Preview" width="100%" />
