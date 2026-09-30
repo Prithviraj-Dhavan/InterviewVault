@@ -93,7 +93,10 @@ export function InterviewClient({ sessionId }: { sessionId: string }) {
   const generateReportMutation = useMutation({
     mutationFn: async () => {
       const res = await fetch(`/api/interview/sessions/${sessionId}/report`, { method: "POST" });
-      if (!res.ok) throw new Error("Failed to generate report");
+      if (!res.ok) {
+         const err = await res.json().catch(() => ({}));
+         throw new Error(err.error || "Failed to generate report");
+      }
       return res.json();
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["session", sessionId] }),
@@ -108,6 +111,9 @@ export function InterviewClient({ sessionId }: { sessionId: string }) {
     if (status === "INPUT") generateProfileMutation.mutate();
     if (status === "ANALYSIS") generatePlanMutation.mutate();
     if (status === "PLANNING") generateQuestionMutation.mutate();
+    if (status === "REPORT" && !data.report && !generateReportMutation.isPending) {
+       generateReportMutation.mutate();
+    }
     if (status === "INTERVIEW_LOOP") {
        // if there are no questions, generate the first one
        if (!data.questions || data.questions.length === 0) {
@@ -269,19 +275,15 @@ export function InterviewClient({ sessionId }: { sessionId: string }) {
                     <Button 
                        size="lg" 
                        className="w-full"
-                       disabled={generateQuestionMutation.isPending}
+                       disabled={generateQuestionMutation.isPending || generateReportMutation.isPending}
                        onClick={() => {
-                         if (data.questions.filter((q: any) => !q.parentQuestionId).length >= plan?.topics.reduce((acc: number, t: any) => acc + t.question_count, 0) && !lastEval.triggeredFollowup) {
-                            generateReportMutation.mutate();
-                         } else {
-                            generateQuestionMutation.mutate();
-                         }
+                          generateQuestionMutation.mutate();
                        }}
                     >
                        {generateQuestionMutation.isPending || generateReportMutation.isPending ? (
                           <Loader2 className="animate-spin size-4 mr-2" />
                        ) : null}
-                       {lastEval.triggeredFollowup ? "Proceed to Follow-up" : "Next Question"}
+                       {lastEval.score < 4 && !lastQuestion.parentQuestionId ? "Proceed to Follow-up" : "Next Question"}
                     </Button>
                  </div>
                )}
@@ -292,8 +294,18 @@ export function InterviewClient({ sessionId }: { sessionId: string }) {
             <div className="flex flex-col h-full space-y-6">
               {!report ? (
                  <div className="flex-1 flex flex-col items-center justify-center text-center space-y-4">
-                    <Loader2 className="animate-spin size-12 text-primary mx-auto" />
-                    <h3 className="text-xl font-semibold">Generating Final Report...</h3>
+                    {generateReportMutation.isError ? (
+                       <div className="text-red-500 max-w-md">
+                          <h3 className="text-xl font-semibold mb-2">Error Generating Report</h3>
+                          <p className="text-sm mb-4">{generateReportMutation.error?.message || "An unknown error occurred"}</p>
+                          <Button onClick={() => generateReportMutation.mutate()}>Try Again</Button>
+                       </div>
+                    ) : (
+                       <>
+                          <Loader2 className="animate-spin size-12 text-primary mx-auto" />
+                          <h3 className="text-xl font-semibold">Generating Final Report...</h3>
+                       </>
+                    )}
                  </div>
               ) : (
                  <div className="space-y-6">
