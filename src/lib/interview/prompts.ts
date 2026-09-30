@@ -21,7 +21,13 @@ ${resumeText}
 Candidate Profile Summary:
 ${JSON.stringify(profile, null, 2)}
 
-Create an interview plan with weighted topics to cover in the interview for the ${role} role at ${company}. Ensure a mix of technical, behavioral, and resume-deep-dive (projects/internships) topics. Tailor the topics and weights to the known interview style of ${company} (e.g., if it's FAANG, weight data structures or system design higher; if it's a startup, weight product sense or end-to-end execution higher).`;
+Create an interview plan with weighted topics to cover in the interview for the ${role} role at ${company}. 
+
+IMPORTANT INSTRUCTIONS:
+1. Smartly analyze the WHOLE resume. Identify different projects, internships, and core skills.
+2. Equally and intelligently distribute the topics/questions across these different projects and skills. DO NOT focus on just one project.
+3. Keep the total 'question_count' across all topics to exactly 5. This allows room for follow-ups (hard limit of 7 questions total).
+4. Tailor the topics and weights to the known interview style of ${company} and the specific requirements of the JD.`;
 }
 
 export function buildQuestionPrompt(
