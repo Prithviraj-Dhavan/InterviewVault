@@ -40,7 +40,7 @@ export function Hero() {
             initial={{ opacity: 0, y: 20 }}
             transition={{ duration: 0.5, delay: 0.1 }}
           >
-            Say Hello to Effortless Interview Question Management
+            Say Hello to Effortless AI Interviews and Question Management
           </motion.h1>
 
           {/* Description */}
@@ -51,7 +51,7 @@ export function Hero() {
             transition={{ duration: 0.5, delay: 0.2 }}
           >
             InterviewVault lets you collect and share real interview questions
-            with solutions — organized, searchable, and built for team prep.
+            with solutions — organized, searchable, and ready for AI mock interviews.
           </motion.p>
 
           {/* CTA Buttons */}
