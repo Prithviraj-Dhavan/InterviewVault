@@ -1,103 +1,102 @@
-![App preview](./assets/app.png)
+<div align="center">
+  <img src="./assets/app.png" alt="Interview Vault App Preview" width="100%" />
 
-# Interview Vault
-> **Share interview questions with ease**
+  # Interview Vault 
+  **The ultimate platform for collaborative interview prep and AI-powered mock interviews.**
 
-A comprehensive platform for storing, organizing, and sharing interview questions and answers. Built with modern web technologies to help developers prepare for technical interviews and contribute to the community knowledge base.
+  [![Next.js](https://img.shields.io/badge/Next.js-15-black?style=flat&logo=next.js)](https://nextjs.org/)
+  [![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue?style=flat&logo=typescript)](https://www.typescriptlang.org/)
+  [![Tailwind CSS](https://img.shields.io/badge/Tailwind-CSS-38B2AC?style=flat&logo=tailwind-css)](https://tailwindcss.com/)
+  [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Drizzle-336791?style=flat&logo=postgresql)](https://postgresql.org/)
+</div>
 
-## Architecture
+<br/>
 
-![Architecture Diagram](./assets/architechture.png)
+InterviewVault is a comprehensive, modern platform built to help developers master technical interviews. Not only can you store, share, and organize community interview questions, but you can also run **highly realistic, dynamic AI Mock Interviews** tailored directly to your resume and target job descriptions.
 
-## Features
+## 🚀 Key Features
 
-- **Question Management**: Create, edit, and organize interview questions with detailed content
-- **AI-Powered Answers**: Generate intelligent answers for questions using AI completion
-- **Answer Tracking**: Provide and manage user-submitted answers for interview questions
-- **Tagging System**: (Coming Soon) Categorize questions with custom tags for easy filtering
-- **Company & Role Filtering**: Filter questions by specific companies and job roles
-- **User Authentication**: Secure user management with Better Auth
-- **Responsive Design**: Modern UI built with shadcn/ui components and Tailwind CSS
+### 🧠 AI Mock Interview Engine (New!)
+* **Smart Resume Parsing**: Upload your resume and Job Description, and our AI will dynamically identify core skills, projects, and gaps to build a completely personalized 5-question interview plan.
+* **Dynamic Follow-ups**: Answers are graded in real-time (1-5 scale). If you stumble on a concept, the AI instantly pivots to ask a highly-targeted follow-up question to probe your understanding (capped at exactly 7 questions to respect your time).
+* **Instant Scorecards**: When the interview finishes, the system utilizes Groq LPUs for lightning-fast inference to generate an immediate, comprehensive scorecard featuring a 0-100% final score, a topic-by-topic breakdown, and an actionable narrative summary.
 
-## Tech Stack
+### 📚 Community Question Vault
+* **Question Management**: Create, edit, and organize real interview questions.
+* **Filter & Search**: Quickly sort questions by specific companies (e.g., Google, Amazon) or job roles.
+* **AI-Powered Solutions**: Generate intelligent reference answers for difficult technical questions.
+* **Collaborative Answers**: Community members can submit and upvote the best solutions.
 
-- **Framework**: Next.js 15 with App Router
-- **Authentication**: Better Auth
-- **Database**: PostgreSQL with Drizzle ORM
-- **UI**: shadcn/ui components with Tailwind CSS, [MvpBlocks](https://github.com/subhadeeproy3902/mvpblocks)
-- **State Management**: Zustand & TanStack Query
-- **Type Safety**: TypeScript with Zod validation
-- **AI Integration**: AI SDK for intelligent answer generation
+## 🏗️ Architecture
 
-## Getting Started
+<div align="center">
+  <img src="./assets/architecture.png" alt="Architecture Diagram" width="80%" />
+</div>
+
+## 🛠️ Tech Stack
+
+* **Framework**: Next.js 15 (App Router)
+* **Language**: TypeScript
+* **Database**: PostgreSQL paired with Drizzle ORM
+* **Authentication**: Better Auth (Google & GitHub SSO)
+* **AI Integration**: AI SDK paired with Groq LPUs (`@ai-sdk/groq`) for instant, ultra-fast inference
+* **UI/Styling**: Tailwind CSS, shadcn/ui, framer-motion
+
+## 💻 Getting Started
 
 ### Prerequisites
-
-- Node.js 18+
-- PostgreSQL database
-- pnpm (recommended)
+* Node.js 18+
+* PostgreSQL database instance
+* `pnpm` package manager (recommended)
+* API Keys (Groq API Key for AI Features)
 
 ### Installation
 
-1. Clone the repository:
-
+1. **Clone the repository:**
 ```bash
 git clone https://github.com/Prithviraj-Dhavan/InterviewVault.git
-cd interview-vault
+cd InterviewVault
 ```
 
-2. Install dependencies:
-
+2. **Install dependencies:**
 ```bash
 pnpm install
 ```
 
-3. Set up environment variables:
-
+3. **Environment Setup:**
 ```bash
 cp .env.example .env
 ```
+*Be sure to configure your Database URL, Auth secrets, and your `GROQ_API_KEY` inside `.env`.*
 
-Configure your database URL and authentication secrets in `.env.local`.
-
-4. Set up the database:
-
+4. **Initialize the Database:**
 ```bash
 npx drizzle-kit push
 ```
 
-5. Run the development server:
-
+5. **Start the Development Server:**
 ```bash
 pnpm dev
 ```
+Open [http://localhost:3000](http://localhost:3000) to view the application!
 
-Open [http://localhost:3000](http://localhost:3000) to view the application.
+## 🗄️ Database Schema Overview
+The application is structured via a robust relational PostgreSQL schema:
+* **Users & Auth**: Secure sessions managed by Better Auth.
+* **Questions & Answers**: Core community question tracking and crowdsourced answers.
+* **Interview Sessions**: Tracks the state of active mock interviews.
+* **Candidate Profiles & Plans**: Stores the AI's analysis of the user's resume vs JD.
+* **Interview Questions & Evaluations**: Records the live transcript and real-time grading of the mock interview.
+* **Interview Reports**: Stores the final 0-100% calculated scores and summaries.
 
-## Available Scripts
-
-- `pnpm dev` - Start development server with Turbopack
-- `pnpm build` - Build the application for production
-- `pnpm start` - Start the production server
-- `pnpm lint` - Run ESLint
-- `pnpm typecheck` - Run TypeScript type checking
-
-## Database Schema
-
-The application uses a PostgreSQL database with the following main entities:
-
-- **Users**: User accounts and authentication
-- **Questions**: Interview questions with content, titles, and AI-generated answers
-- **Answers**: User-provided answers to questions
-- **Tags**: (Coming Soon) Categorization system for questions
-- **Companies**: Company information for filtering
-- **Roles**: Job role information for filtering
-
-## Contributing
-
+## 🤝 Contributing
 1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'feat: add amazing feature'`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
+---
+<div align="center">
+  <i>Built to make technical interviews effortless.</i>
+</div>
