@@ -19,6 +19,7 @@ import {
   BriefcaseBusiness,
 } from "lucide-react";
 import { PrepStorySection } from "@/components/practice/prep-story-section";
+import { InterviewGuidelines } from "@/components/custom/practice/interview-guidelines";
 
 export default function PracticeSetupPage() {
   const router = useRouter();
@@ -56,6 +57,9 @@ export default function PracticeSetupPage() {
   return (
     <main className="w-full">
       <PrepStorySection />
+
+      {/* ── Interview Guidelines ──────────────────────────── */}
+      <InterviewGuidelines />
 
       {/* ── Form Section ─────────────────────────────────── */}
       <div className="relative overflow-hidden py-20">
