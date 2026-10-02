@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, ChevronRight, Github } from "lucide-react";
+import { ArrowRight, ChevronRight } from "lucide-react";
 import { motion } from "motion/react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -74,20 +74,7 @@ export function Hero() {
               </Button>
             </Link>
 
-            <Link
-              href="https://github.com/Prithviraj-Dhavan/InterviewVault"
-              rel="noopener noreferrer"
-              target="_blank"
-            >
-              <Button
-                className="flex items-center gap-2 rounded-full border-border bg-background/50 backdrop-blur-sm"
-                size="lg"
-                variant="outline"
-              >
-                <Github className="h-4 w-4" />
-                Star on GitHub
-              </Button>
-            </Link>
+
           </motion.div>
 
           {/* Feature Image */}
