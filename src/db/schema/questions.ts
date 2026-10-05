@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
   boolean,
+  integer,
   index,
   json,
   pgTable,
@@ -29,6 +30,7 @@ export const questionsTable = pgTable(
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
     isDeleted: boolean("is_deleted").default(false).notNull(),
+    spamReports: integer("spam_reports").default(0).notNull(),
   },
   (t) => [
     index("company_idx").on(t.companyId),
