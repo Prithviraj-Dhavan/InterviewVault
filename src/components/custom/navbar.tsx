@@ -1,10 +1,11 @@
 "use client";
 
-import { LogOut } from "lucide-react";
+import { LogOut, Shield } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { signOut, useSession } from "@/lib/auth-client";
-import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import { Avatar, AvatarFallback } from "../ui/avatar";
 import { Button } from "../ui/button";
 import {
   DropdownMenu,
@@ -64,7 +65,7 @@ function UserMenu() {
     );
   }
 
-  const { name, email, image } = session.user;
+  const { name, email } = session.user;
   const identifier = name || email || "?";
   const bgColor = getAvatarColor(identifier);
   const initialsText = initials(name, email);
@@ -78,8 +79,8 @@ function UserMenu() {
           type="button"
         >
           <Avatar>
-            <AvatarFallback 
-              style={{ backgroundColor: bgColor, color: 'white', fontWeight: 500 }}
+            <AvatarFallback
+              style={{ backgroundColor: bgColor, color: "white", fontWeight: 500 }}
             >
               {initialsText}
             </AvatarFallback>
@@ -109,6 +110,52 @@ function UserMenu() {
   );
 }
 
+function NavLinks() {
+  const { data: session } = useSession();
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (!session) {
+      setIsAdmin(false);
+      return;
+    }
+    fetch("/api/admin/me")
+      .then((r) => r.json())
+      .then((d) => setIsAdmin(d.isAdmin === true))
+      .catch(() => setIsAdmin(false));
+  }, [session]);
+
+  const baseLinks: LinkItem[] = [
+    { name: "Questions", href: "/questions" },
+  ];
+
+  // While loading admin state, show a generic dashboard link
+  const finalLinks = [
+    {
+      name: isAdmin ? "Admin Console" : "Dashboard",
+      href: isAdmin ? "/admin" : "/dashboard",
+    },
+    ...baseLinks,
+    {
+      name: isAdmin ? "Interviews" : "Practice",
+      href: "/practice",
+    }
+  ];
+
+  return (
+    <>
+      {finalLinks.map((link) => (
+        <Link href={link.href} key={link.href}>
+          <span className="font-medium text-foreground hover:text-primary transition-colors flex items-center gap-1.5">
+            {link.name === "Admin Console" && <Shield className="h-3.5 w-3.5 text-primary" />}
+            {link.name}
+          </span>
+        </Link>
+      ))}
+    </>
+  );
+}
+
 export function Navbar() {
   return (
     <nav className="mx-auto flex max-w-7xl items-center justify-between p-4">
@@ -118,14 +165,8 @@ export function Navbar() {
         </span>
       </Link>
       <div className="flex items-center justify-between gap-4">
-        {links.map((link) => (
-          <Link href={link.href} key={link.href}>
-            <span className="font-medium text-foreground hover:text-primary">
-              {link.name}
-            </span>
-          </Link>
-        ))}
-        <div className="flex items-center justify-between gap-4">
+        <NavLinks />
+        <div className="flex items-center gap-3 ml-2">
           <UserMenu />
           <ModeToggle />
         </div>

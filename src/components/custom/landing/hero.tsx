@@ -3,10 +3,13 @@
 import { ArrowRight, ChevronRight } from "lucide-react";
 import { motion } from "motion/react";
 import Link from "next/link";
+import { useSession } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { HeroImage } from "./hero-image";
 
 export function Hero() {
+  const { data: session } = useSession();
+  
   return (
     <div className="relative w-full overflow-hidden bg-background">
       {/* Background gradient */}
@@ -61,7 +64,7 @@ export function Hero() {
             initial={{ opacity: 0, y: 20 }}
             transition={{ duration: 0.5, delay: 0.3 }}
           >
-            <Link href="/sign-in">
+            <Link href={session ? "/practice" : "/sign-in"}>
               <Button
                 className="group relative overflow-hidden rounded-full bg-primary px-6 text-primary-foreground shadow-lg transition-all duration-300 hover:shadow-primary/30"
                 size="lg"
