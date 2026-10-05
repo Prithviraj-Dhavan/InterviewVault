@@ -11,11 +11,12 @@ import {
 } from "@/components/ui/card";
 import type { Question } from "@/db/schema/questions";
 import { VoteButton, type VoteSummary } from "./vote-button";
+import { ReportButton } from "./report-button";
 
 type QuestionCardProps = {
   question: Omit<
     Question,
-    "isDeleted" | "companyId" | "updatedAt" | "createdAt"
+    "isDeleted" | "companyId" | "updatedAt" | "createdAt" | "spamReports"
   > & {
     createdAt: string;
     postedByImage: string | null;
@@ -28,12 +29,17 @@ export function QuestionCard({ question, votes }: QuestionCardProps) {
   return (
     <Card className="group transition-transform duration-300 hover:scale-[102%]">
       <CardHeader>
-        <h2 className="line-clamp-1 font-semibold text-lg transition-colors duration-300 group-hover:text-primary">
-          {question.title}
-        </h2>
-        <p className="mt-2 line-clamp-2 text-muted-foreground transition-colors duration-300 group-hover:text-foreground">
-          {question.description}
-        </p>
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1">
+            <h2 className="line-clamp-1 font-semibold text-lg transition-colors duration-300 group-hover:text-primary">
+              {question.title}
+            </h2>
+            <p className="mt-2 line-clamp-2 text-muted-foreground transition-colors duration-300 group-hover:text-foreground">
+              {question.description}
+            </p>
+          </div>
+          <ReportButton questionId={question.id} />
+        </div>
       </CardHeader>
       <CardContent className="flex items-center justify-between gap-2">
         <Badge>{question.companyName ?? "Not Available"}</Badge>

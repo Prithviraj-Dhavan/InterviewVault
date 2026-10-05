@@ -11,6 +11,9 @@ import {
 } from "@/db/schema/questions";
 import { auth } from "@/lib/auth";
 import { createQuestionFormSchema } from "@/lib/zod-schemas";
+import { generateObject } from "ai";
+import { z } from "zod";
+import { groq } from "@ai-sdk/groq";
 
 // The dropdowns use "all" (or an empty value) to mean "nothing selected"
 function readOptionalField(
@@ -92,6 +95,30 @@ export async function createQuestion(
 
     const { title, description, company, role } = parsed.data;
 
+    // AI Spam Check
+    const spamCheck = await generateObject({
+      model: groq("llama-3.3-70b-versatile"),
+      schema: z.object({
+        isSpam: z.boolean(),
+        reason: z.string().optional(),
+      }),
+      prompt: `You are an automated spam filter for a software engineering interview preparation platform. 
+Evaluate the following submitted question to determine if it is spam, gibberish, or completely irrelevant. 
+If it is a valid interview question (even if it's simple or poorly formatted), return false. 
+If it is random keyboard mashing (e.g., 'asdfasdf'), highly offensive, or a completely irrelevant advertisement, return true.
+
+Title: ${title}
+Description: ${description}`,
+    });
+
+    if (spamCheck.object.isSpam) {
+      return {
+        status: "failed",
+        message: "Your submission was flagged as invalid or spam. Please ensure it is a real question.",
+        prevState,
+      };
+    }
+
     // Generate the id here so the question and its role link can be
     // saved together in one batch (a single transaction on Neon HTTP).
     const id = crypto.randomUUID();
@@ -172,5 +199,100 @@ export async function getQuestion(questionId: string) {
       message: "Failed to fetch question",
       data: null,
     } as const;
+  }
+}
+
+export async function deleteUserQuestion(questionId: string) {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+    if (!session) return { status: "failed", message: "Unauthorized" };
+
+    const [question] = await db
+      .select({ postedBy: questionsTable.postedBy })
+      .from(questionsTable)
+      .where(eq(questionsTable.id, questionId));
+
+    if (!question || question.postedBy !== session.session.userId) {
+      return { status: "failed", message: "Forbidden" };
+    }
+
+    await db
+      .update(questionsTable)
+      .set({ isDeleted: true })
+      .where(eq(questionsTable.id, questionId));
+      
+    return { status: "success" };
+  } catch (error) {
+    console.error(error);
+    return { status: "failed", message: "Internal Error" };
+  }
+}
+
+export async function updateUserQuestion(
+  questionId: string, 
+  data: { title: string; description: string; companyId?: string }
+) {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+    if (!session) return { status: "failed", message: "Unauthorized" };
+
+    const [question] = await db
+      .select({ postedBy: questionsTable.postedBy })
+      .from(questionsTable)
+      .where(eq(questionsTable.id, questionId));
+
+    if (!question || question.postedBy !== session.session.userId) {
+      return { status: "failed", message: "Forbidden" };
+    }
+
+    await db
+      .update(questionsTable)
+      .set({
+        title: data.title,
+        description: data.description,
+        ...(data.companyId ? { companyId: data.companyId } : {})
+      })
+      .where(eq(questionsTable.id, questionId));
+
+    return { status: "success" };
+  } catch (error) {
+    console.error(error);
+    return { status: "failed", message: "Internal Error" };
+  }
+}
+
+export async function reportQuestion(questionId: string) {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+    if (!session) return { status: "failed", message: "Unauthorized" };
+
+    const [question] = await db
+      .select({ spamReports: questionsTable.spamReports })
+      .from(questionsTable)
+      .where(eq(questionsTable.id, questionId));
+
+    if (!question) {
+      return { status: "failed", message: "Question not found" };
+    }
+
+    const newSpamCount = question.spamReports + 1;
+
+    await db
+      .update(questionsTable)
+      .set({ 
+        spamReports: newSpamCount,
+        isDeleted: newSpamCount >= 3 
+      })
+      .where(eq(questionsTable.id, questionId));
+
+    return { 
+      status: "success", 
+      message: newSpamCount >= 3 
+        ? "Question hidden for administrative review."
+        : "Question reported successfully." 
+    };
+  } catch (error) {
+    console.error(error);
+    return { status: "failed", message: "Internal Error" };
   }
 }

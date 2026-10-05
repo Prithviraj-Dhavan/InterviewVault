@@ -1,4 +1,7 @@
 import { TRPCError } from "@trpc/server";
+import { generateObject } from "ai";
+import { z } from "zod";
+import { groq } from "@ai-sdk/groq";
 import { and, count, desc, eq, exists, type SQL, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { user } from "@/db/schema/auth";
@@ -97,6 +100,21 @@ export const questionRouter = createTRPCRouter({
     .input(postQuestionSchema)
     .mutation(async ({ ctx, input }) => {
       try {
+        const spamCheck = await generateObject({
+          model: groq("llama-3.3-70b-versatile"),
+          schema: z.object({
+            isSpam: z.boolean(),
+          }),
+          prompt: `You are an automated spam filter for a software engineering interview preparation platform. Evaluate if the following is spam, gibberish (e.g. 'asdf'), or completely irrelevant. Return true if spam, false if it's a valid question.\nTitle: ${input.title}\nDescription: ${input.description}`,
+        });
+
+        if (spamCheck.object.isSpam) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Your submission was flagged as invalid or spam.",
+          });
+        }
+
         const [question] = await db
           .insert(questionsTable)
           .values({
