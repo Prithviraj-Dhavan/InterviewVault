@@ -2,8 +2,10 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
+import { user as userSchema } from "@/db/schema/auth";
 import { interviewSessions, interviewReports } from "@/db/schema/interview";
-import { eq, desc, inArray } from "drizzle-orm";
+import { questionsTable } from "@/db/schema/questions";
+import { eq, desc, inArray, and } from "drizzle-orm";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { formatDistanceToNow } from "date-fns";
@@ -15,10 +17,21 @@ import {
   Target,
   Plus,
 } from "lucide-react";
+import { UserQuestionsClient } from "./user-questions-client";
 
 export default async function DashboardPage() {
   const { user } = (await auth.api.getSession({ headers: await headers() })) ?? { user: null };
   if (!user) redirect("/sign-in");
+
+  // Check if admin and redirect
+  const [currentUser] = await db
+    .select({ isAdmin: userSchema.isAdmin })
+    .from(userSchema)
+    .where(eq(userSchema.id, user.id));
+
+  if (currentUser?.isAdmin) {
+    redirect("/admin");
+  }
 
   const sessions = await db.query.interviewSessions.findMany({
     where: eq(interviewSessions.userId, user.id),
@@ -35,6 +48,22 @@ export default async function DashboardPage() {
   const avgScore = reports.length > 0
     ? Math.round(reports.reduce((acc, r) => acc + r.overallScore, 0) / reports.length)
     : null;
+
+  const userQuestions = await db
+    .select({
+      id: questionsTable.id,
+      title: questionsTable.title,
+      description: questionsTable.description,
+      createdAt: questionsTable.createdAt,
+    })
+    .from(questionsTable)
+    .where(
+      and(
+        eq(questionsTable.postedBy, user.id),
+        eq(questionsTable.isDeleted, false)
+      )
+    )
+    .orderBy(desc(questionsTable.createdAt));
 
   const firstName = user.name?.split(" ")[0] ?? "there";
 
@@ -273,6 +302,9 @@ export default async function DashboardPage() {
           </div>
         )}
       </div>
+
+      {/* ── User Questions Grid ────────────────────────── */}
+      <UserQuestionsClient initialQuestions={userQuestions} />
     </main>
   );
 }

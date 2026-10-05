@@ -3,6 +3,7 @@ import { getQuestion } from "@/actions/questions";
 import { AiAnswer } from "@/components/custom/questions/answer/ai-answer";
 import Answers from "@/components/custom/questions/answer/answers";
 import { QuestionVote } from "@/components/custom/questions/vote-button";
+import { ReportButton } from "@/components/custom/questions/report-button";
 import { UserProfile } from "@/components/custom/user/profile";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -56,6 +57,7 @@ export default async function QuestionPage({ params }: QuestionPageProps) {
             {question.company || "Unknown"}
           </Badge>
           <QuestionVote questionId={questionId} />
+          <ReportButton questionId={questionId} showText />
         </div>
       </div>
       <div className="mb-2 px-4 py-3">
