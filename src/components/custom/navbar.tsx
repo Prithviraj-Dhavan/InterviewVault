@@ -1,6 +1,6 @@
 "use client";
 
-import { LogOut, Shield } from "lucide-react";
+import { LogOut, Shield, Menu } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -156,6 +156,59 @@ function NavLinks() {
   );
 }
 
+function MobileMenu() {
+  const { data: session } = useSession();
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (!session) {
+      setIsAdmin(false);
+      return;
+    }
+    fetch("/api/admin/me")
+      .then((r) => r.json())
+      .then((d) => setIsAdmin(d.isAdmin === true))
+      .catch(() => setIsAdmin(false));
+  }, [session]);
+
+  const baseLinks: LinkItem[] = [
+    { name: "Questions", href: "/questions" },
+  ];
+
+  const finalLinks = [
+    {
+      name: isAdmin ? "Admin Console" : "Dashboard",
+      href: isAdmin ? "/admin" : "/dashboard",
+    },
+    ...baseLinks,
+    {
+      name: isAdmin ? "Interviews" : "Practice",
+      href: "/practice",
+    }
+  ];
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon" className="md:hidden">
+          <Menu className="h-5 w-5" />
+          <span className="sr-only">Toggle menu</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-48">
+        {finalLinks.map((link) => (
+          <DropdownMenuItem key={link.href} asChild>
+            <Link href={link.href} className="w-full flex items-center gap-2 cursor-pointer">
+              {link.name === "Admin Console" && <Shield className="h-4 w-4 text-primary" />}
+              {link.name}
+            </Link>
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 export function Navbar() {
   return (
     <nav className="mx-auto flex max-w-7xl items-center justify-between p-4">
@@ -164,9 +217,14 @@ export function Navbar() {
           Interview Vault
         </span>
       </Link>
-      <div className="flex items-center justify-between gap-4">
-        <NavLinks />
-        <div className="flex items-center gap-3 ml-2">
+      <div className="flex items-center gap-2 sm:gap-4">
+        <div className="hidden md:flex items-center gap-4 mr-2">
+          <NavLinks />
+        </div>
+        <div className="flex md:hidden">
+          <MobileMenu />
+        </div>
+        <div className="flex items-center gap-2 sm:gap-3">
           <UserMenu />
           <ModeToggle />
         </div>
