@@ -64,7 +64,7 @@ export function Hero() {
             initial={{ opacity: 0, y: 20 }}
             transition={{ duration: 0.5, delay: 0.3 }}
           >
-            <Link href={session ? "/practice" : "/sign-in"}>
+            <Link href="/practice">
               <Button
                 className="group relative overflow-hidden rounded-full bg-primary px-6 text-primary-foreground shadow-lg transition-all duration-300 hover:shadow-primary/30"
                 size="lg"

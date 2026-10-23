@@ -20,13 +20,31 @@ import {
 } from "lucide-react";
 import { PrepStorySection } from "@/components/practice/prep-story-section";
 import { InterviewGuidelines } from "@/components/custom/practice/interview-guidelines";
+import { useSession } from "@/lib/auth-client";
 
 export default function PracticeSetupPage() {
   const router = useRouter();
+  const { data: session } = useSession();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [fileName, setFileName] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleAuthRequired = (e: React.MouseEvent | React.FocusEvent) => {
+    if (!session) {
+      e.preventDefault();
+      router.push("/sign-in");
+    }
+  };
+
+  const handleResumeClick = (e: React.MouseEvent) => {
+    if (!session) {
+      e.preventDefault();
+      router.push("/sign-in");
+      return;
+    }
+    fileInputRef.current?.click();
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -35,6 +53,10 @@ export default function PracticeSetupPage() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!session) {
+      router.push("/sign-in");
+      return;
+    }
     setIsLoading(true);
     setError("");
 
@@ -143,6 +165,8 @@ export default function PracticeSetupPage() {
                       placeholder="e.g. Google"
                       autoComplete="off"
                       required
+                      onClick={handleAuthRequired}
+                      onFocus={handleAuthRequired}
                       className="h-11 rounded-xl border-border/60 bg-background/60 text-sm placeholder:text-muted-foreground/50"
                     />
                   </div>
@@ -157,6 +181,8 @@ export default function PracticeSetupPage() {
                       placeholder="e.g. Frontend Engineer"
                       autoComplete="off"
                       required
+                      onClick={handleAuthRequired}
+                      onFocus={handleAuthRequired}
                       className="h-11 rounded-xl border-border/60 bg-background/60 text-sm placeholder:text-muted-foreground/50"
                     />
                   </div>
@@ -168,7 +194,7 @@ export default function PracticeSetupPage() {
                     Resume (PDF)
                   </Label>
                   <div
-                    onClick={() => fileInputRef.current?.click()}
+                    onClick={handleResumeClick}
                     className={`relative flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed px-6 py-7 transition-colors ${
                       fileName
                         ? "border-primary/40 bg-primary/5"
@@ -219,12 +245,15 @@ export default function PracticeSetupPage() {
                     name="jobDescription"
                     placeholder="Paste the full job description here..."
                     required
+                    onClick={handleAuthRequired}
+                    onFocus={handleAuthRequired}
                     className="min-h-[140px] resize-none rounded-xl border-border/60 bg-background/60 text-sm placeholder:text-muted-foreground/50"
                   />
                 </div>
 
                 <Button
-                  type="submit"
+                  type={session ? "submit" : "button"}
+                  onClick={handleAuthRequired}
                   className="group h-12 w-full gap-2 rounded-xl text-base font-semibold shadow-lg shadow-primary/20"
                   disabled={isLoading}
                 >
