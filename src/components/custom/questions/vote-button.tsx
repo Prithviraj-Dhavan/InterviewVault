@@ -56,9 +56,7 @@ export function VoteButton({
       return;
     }
     if (!session) {
-      toast.error("Sign in to mark questions you were asked", {
-        action: { label: "Sign in", onClick: () => router.push("/sign-in") },
-      });
+      router.push("/sign-in");
       return;
     }
     const voted = !current.voted;

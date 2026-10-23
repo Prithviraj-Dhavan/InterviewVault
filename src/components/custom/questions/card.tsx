@@ -1,5 +1,9 @@
+"use client";
+
 import { ArrowRightIcon } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useSession } from "@/lib/auth-client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -26,6 +30,15 @@ type QuestionCardProps = {
 };
 
 export function QuestionCard({ question, votes }: QuestionCardProps) {
+  const { data: session } = useSession();
+  const router = useRouter();
+
+  const handleDetailsClick = (e: React.MouseEvent) => {
+    if (!session) {
+      e.preventDefault();
+      router.push("/sign-in");
+    }
+  };
   return (
     <Card className="group transition-transform duration-300 hover:scale-[102%]">
       <CardHeader>
@@ -71,7 +84,7 @@ export function QuestionCard({ question, votes }: QuestionCardProps) {
           </Avatar>
           <p className="text-muted-foreground text-sm">{question.postedBy}</p>
         </div>
-        <Link href={`/questions/${question.id}`}>
+        <Link href={`/questions/${question.id}`} onClick={handleDetailsClick}>
           <Button variant="secondary">
             Details <ArrowRightIcon className="h-4 w-4" />
           </Button>

@@ -1,3 +1,6 @@
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+import { auth } from "@/lib/auth";
 import { Streamdown } from "streamdown";
 import { getQuestion } from "@/actions/questions";
 import { AiAnswer } from "@/components/custom/questions/answer/ai-answer";
@@ -15,6 +18,11 @@ type QuestionPageProps = {
 };
 
 export default async function QuestionPage({ params }: QuestionPageProps) {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session) {
+    redirect("/sign-in");
+  }
+
   const { questionId } = await params;
 
   if (!questionId) {

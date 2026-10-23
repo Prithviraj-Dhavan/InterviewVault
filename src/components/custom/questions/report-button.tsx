@@ -2,7 +2,9 @@
 
 import { ShieldAlert } from "lucide-react";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { useSession } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -18,11 +20,25 @@ import {
 import { reportQuestion } from "@/actions/questions";
 
 export function ReportButton({ questionId, showText = false }: { questionId: string; showText?: boolean }) {
+  const { data: session } = useSession();
+  const router = useRouter();
   const [isReporting, setIsReporting] = useState(false);
   const [open, setOpen] = useState(false);
 
+  const handleTriggerClick = (e: React.MouseEvent) => {
+    if (!session) {
+      e.preventDefault();
+      e.stopPropagation();
+      router.push("/sign-in");
+    }
+  };
+
   const handleReport = async (e: React.MouseEvent) => {
     e.preventDefault(); 
+    if (!session) {
+      router.push("/sign-in");
+      return;
+    }
     setIsReporting(true);
     const res = await reportQuestion(questionId);
     
@@ -36,11 +52,21 @@ export function ReportButton({ questionId, showText = false }: { questionId: str
   };
 
   return (
-    <AlertDialog open={open} onOpenChange={setOpen}>
+    <AlertDialog
+      open={open}
+      onOpenChange={(isOpen) => {
+        if (isOpen && !session) {
+          router.push("/sign-in");
+          return;
+        }
+        setOpen(isOpen);
+      }}
+    >
       <AlertDialogTrigger asChild>
         <Button
           variant="outline"
           size={showText ? "default" : "icon"}
+          onClick={handleTriggerClick}
           className={
             showText
               ? "h-8 rounded-full border-rose-200 bg-rose-50/50 px-4 text-xs font-bold tracking-tight text-rose-600 shadow-sm transition-all hover:bg-rose-100 hover:text-rose-700"

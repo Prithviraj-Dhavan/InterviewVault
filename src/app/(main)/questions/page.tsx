@@ -9,6 +9,7 @@ import { TrendingQuestions } from "@/components/custom/questions/trending";
 import { SearchInput } from "@/components/custom/search-input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { NewQuestionButton } from "@/components/custom/questions/new-question-button";
 
 export default function Page() {
   return (
@@ -32,9 +33,7 @@ export default function Page() {
         </div>
         <div className="flex gap-2">
           <SearchInput />
-          <Link href="/questions/new">
-            <Button variant="outline">New</Button>
-          </Link>
+          <NewQuestionButton />
         </div>
         <div className="mt-2 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           {/* Filters */}
